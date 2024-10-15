@@ -9,7 +9,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 app = Flask(__name__)
 
-MODEL_PATH = 'weights/unet.pth'
+MODEL_PATH = 'code/weights/unet.pth'
 
 # Load the model
 model = UNet()  # Assumes the UNet architecture is defined in model.py

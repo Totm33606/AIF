@@ -40,7 +40,7 @@ def train(net, optimizer, loader, epochs=5, writer=None):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default = '../data/landscapes', help='dataset path')
+    parser.add_argument('--data_path', type=str, default = './data/landscapes', help='dataset path')
     parser.add_argument('--batch_size', type=int, default = int(32), help='batch_size')
     parser.add_argument('--lr', type=float, default = float(1e-3), help='learning rate')
     parser.add_argument('--epochs', type=int, default = int(10), help='number of epochs')
@@ -62,26 +62,7 @@ if __name__=='__main__':
     writer = SummaryWriter('runs/UNet')
     loss = train(unet, optimizer, loader, epochs=epochs)
 
-    # x, y = next(iter(loader))
-
-    # with torch.no_grad():
-    #     all_embeddings = []
-    #     all_labels = []
-    #     for x, y in loader:
-    #         x , y = x.to(device), y.to(device)
-    #         embeddings = unet.get_features(x).view(-1, 128*28*28)
-    #         all_embeddings.append(embeddings)
-    #         all_labels.append(y)
-    #         if len(all_embeddings)>6:
-    #             break
-    #     embeddings = torch.cat(all_embeddings)
-    #     labels = torch.cat(all_labels)
-    #     writer.add_embedding(embeddings, label_img=labels, global_step=1)
-    #     writer.add_graph(unet, x.to(device))
-
     # Save model weights
     path_weigts = Path("weights")
-    if not path_weigts.exists(): 
-        path_weigts.mkdir(parents=True, exist_ok=True)
     torch.save(unet.state_dict(), path_weigts / "unet.pth")
     print(f"Model saved to {path_weigts / 'unet.pth'}")

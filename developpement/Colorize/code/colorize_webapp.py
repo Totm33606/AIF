@@ -19,4 +19,4 @@ if __name__=='__main__':
                 outputs='image',
                 live=True,
                 description="Draw a number on the sketchpad to see the model's prediction.",
-                ).launch(debug=True, share=True);
+                ).launch(server_name="0.0.0.0")
