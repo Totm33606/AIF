@@ -1,3 +1,4 @@
+from pathlib import Path
 import argparse
 from statistics import mean
 
@@ -10,6 +11,7 @@ from tqdm import tqdm
 
 from data_utils import get_colorized_dataset_loader
 from model import UNet
+
 # setting device on GPU if available, else CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -26,7 +28,7 @@ def train(net, optimizer, loader, epochs=5, writer=None):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            t.set_description(f'training loss: {mean(running_loss)}')
+            t.set_description(f'Training loss: {mean(running_loss)}')
         if writer is not None:
             writer.add_scalar('training loss', mean(running_loss), epoch)
             img_grid = torchvision.utils.make_grid(outputs[:16].detach().cpu())
@@ -58,24 +60,28 @@ if __name__=='__main__':
 
     optimizer = optim.Adam(unet.parameters(), lr=lr)
     writer = SummaryWriter('runs/UNet')
-    loss = train(unet, optimizer, loader, epochs=epochs, writer=writer)
+    loss = train(unet, optimizer, loader, epochs=epochs)
 
-    x, y = next(iter(loader))
+    # x, y = next(iter(loader))
 
-    with torch.no_grad():
-        all_embeddings = []
-        all_labels = []
-        for x, y in loader:
-            x , y = x.to(device), y.to(device)
-            embeddings = unet.get_features(x).view(-1, 128*28*28)
-            all_embeddings.append(embeddings)
-            all_labels.append(y)
-            if len(all_embeddings)>6:
-                break
-        embeddings = torch.cat(all_embeddings)
-        labels = torch.cat(all_labels)
-        writer.add_embedding(embeddings, label_img=labels, global_step=1)
-        writer.add_graph(unet, x.to(device))
-        
+    # with torch.no_grad():
+    #     all_embeddings = []
+    #     all_labels = []
+    #     for x, y in loader:
+    #         x , y = x.to(device), y.to(device)
+    #         embeddings = unet.get_features(x).view(-1, 128*28*28)
+    #         all_embeddings.append(embeddings)
+    #         all_labels.append(y)
+    #         if len(all_embeddings)>6:
+    #             break
+    #     embeddings = torch.cat(all_embeddings)
+    #     labels = torch.cat(all_labels)
+    #     writer.add_embedding(embeddings, label_img=labels, global_step=1)
+    #     writer.add_graph(unet, x.to(device))
+
     # Save model weights
-    torch.save(unet.state_dict(), 'unet.pth')
+    path_weigts = Path("weights")
+    if not path_weigts.exists(): 
+        path_weigts.mkdir(parents=True, exist_ok=True)
+    torch.save(unet.state_dict(), path_weigts / "unet.pth")
+    print(f"Model saved to {path_weigts / 'unet.pth'}")

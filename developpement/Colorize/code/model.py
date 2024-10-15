@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 def double_conv(in_channels, out_channels):
-    # returns a block compsed of two Convolution layers with ReLU activation function
+    # returns a block composed of two Convolution layers with ReLU activation function
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, 3, padding=1),
         nn.ReLU(),
@@ -15,60 +15,64 @@ class DownSampleBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.conv_block = ...
-        self.maxpool = ...
+        self.conv_block = double_conv(in_channels, out_channels)
+        self.maxpool = nn.MaxPool2d(2)
 
     def forward(self, x):
-        x_skip = ...
-        out = ... 
+        x_skip = self.conv_block(x) # output after convolutions to be used for skip connection
+        out = self.maxpool(x_skip)  # output after maxpooling for downsampling
 
-        return out , x_skip
+        return out, x_skip
 
 class UpSampleBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.conv_block = ...
-        self.upsample = ... # use nn.Upsample
+        self.conv_block = double_conv(in_channels, out_channels)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
     def forward(self, x, x_skip):
         x = self.upsample(x)
-        x = torch.cat([x, x_skip], dim=1) # concatenates x and x_skip
+        x = torch.cat([x, x_skip], dim=1) # concatenate the upsampled output with skip connection
         x = self.conv_block(x)
 
         return x
-
 
 class UNet(nn.Module):
 
     def __init__(self):
         super().__init__()
 
-        self.downsample_block_1 = ...
-        self.downsample_block_2 = ...
-        self.downsample_block_3 = ...
-        self.middle_conv_block = double_conv(128, 256)        
+        # Define downsampling blocks
+        self.downsample_block_1 = DownSampleBlock(1, 32)
+        self.downsample_block_2 = DownSampleBlock(32, 64)
+        self.downsample_block_3 = DownSampleBlock(64, 128)
+        self.middle_conv_block = double_conv(128, 256)  # Middle convolution block
 
+        # Define upsampling blocks
+        self.upsample_block_3 = UpSampleBlock(256 + 128, 128)
+        self.upsample_block_2 = UpSampleBlock(128 + 64, 64)
+        self.upsample_block_1 = UpSampleBlock(64 + 32, 32)
 
-        self.upsample_block_3 = ...
-        self.upsample_block_2 = ...
-        self.upsample_block_1 = ...
-
+        # Final output layer
         self.last_conv = nn.Conv2d(32, 3, 1)
 
-
     def forward(self, x):
-        x, x_skip1 = ...
-        x, x_skip2 = ...
-        x, x_skip3 = ... 
+        # Downsampling path
+        x, x_skip1 = self.downsample_block_1(x)
+        x, x_skip2 = self.downsample_block_2(x)
+        x, x_skip3 = self.downsample_block_3(x)
 
+        # Middle block
         x = self.middle_conv_block(x)
 
-        x = #use upsampleblock_3 and x_skip3
-        x = #use upsampleblock_2 and x_skip2
-        x = #use upsampleblock_1 and x_skip1       
+        # Upsampling path with skip connections
+        x = self.upsample_block_3(x, x_skip3)
+        x = self.upsample_block_2(x, x_skip2)
+        x = self.upsample_block_1(x, x_skip1)
 
-        out = F.sigmoid(self.last_conv(x))
+        # Final output layer with sigmoid activation
+        out = torch.sigmoid(self.last_conv(x))
 
         return out
 

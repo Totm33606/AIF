@@ -10,9 +10,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 app = Flask(__name__)
 
-parser = ... 
-... # add an argument '--model_path'
-model_path = ...
+parser = argparse.ArgumentParser(description='Make prediction using pre-trained model.')
+parser.add_argument('--model_path', type=str, required=True, help='Path to pre-trained model.')
+args = parser.parse_args()
+model_path = args.model_path
 
 model = MNISTNet().to(device)
 # Load the model
@@ -24,6 +25,10 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
+
+@app.route('/')
+def home():
+    return "Welcome to the Flask-PyTorch API!"
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -40,6 +45,28 @@ def predict():
         _, predicted = outputs.max(1)
 
     return jsonify({"prediction": int(predicted[0])})
+
+@app.route('/batch_predict', methods=['POST'])
+def batch_predict():
+    # Get the image data from the request
+    images_binary = request.files.getlist("images[]")
+
+    tensors = []
+
+    for img_binary in images_binary:
+        img_pil = Image.open(img_binary.stream)
+        tensor = transform(img_pil)
+        tensors.append(tensor)
+
+    # Stack tensors to form a batch tensor
+    batch_tensor = torch.stack(tensors, dim=0)
+
+    # Make prediction
+    with torch.no_grad():
+        outputs = model(batch_tensor.to(device))
+        _, predictions = outputs.max(1)
+
+    return jsonify({"predictions": predictions.tolist()})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
