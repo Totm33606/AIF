@@ -10,4 +10,4 @@ COPY . /app
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r base_requirements.txt
 
-CMD ["python", "code/train.py", "--epochs", "1"]
+CMD ["python", "code/train.py"]
