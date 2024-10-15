@@ -18,5 +18,5 @@ if __name__=='__main__':
                 inputs="image", 
                 outputs='image',
                 live=True,
-                description="Draw a number on the sketchpad to see the model's prediction.",
-                ).launch(server_name="0.0.0.0")
+                description="Drop a gray image to colorize it.",
+                ).launch(server_name="0.0.0.0", debug=True, share=True)
