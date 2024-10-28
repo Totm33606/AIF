@@ -1,18 +1,23 @@
-services: # services to run
-  colorize-api: # name of the first service
-    build: 
-      context: . # specify the directory of the Dockerfile
-      dockerfile: Dockerfile-api # specify the Dockerfile name
-    ports:
-      - "5000:5000" # specify port mapping
-      
-  gradio-app:
+version: '3'
+services:
+  flask-api-service:
     build:
-      context: . # specify the directory of the Dockerfile
-      dockerfile: Dockerfile-gradio # specify the Dockerfile name
+      context: .
+      dockerfile: Dockerfile-api
+    container_name: flask-api-container
     ports:
-      - "7860:7860" # specify port mapping
+      - "5000:5000"  # Expose le port 5000 de Flask
+    restart: unless-stopped
+
+  gradio-app-service:
+    build:
+      context: .
+      dockerfile: Dockerfile-gradio
+    container_name: gradio-app-container
     depends_on:
-      - colorize-api # specify service dependencies
+      - flask-api-service  # Gradio dépend de Flask
+    ports:
+      - "7860:7860"  # Expose le port 7860 de Gradio
+    restart: unless-stopped
 
   
